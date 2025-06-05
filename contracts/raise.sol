@@ -20,6 +20,7 @@ contract RasieFunding is Ownable {
     uint256 public basePrice;
     uint256 public slope;
     CallRaydiumProgram public raydiumPool; 
+    bool public isFinalised;
     
     event TokensBought(address indexed buyer, uint256 tokensBought);
     event RaydiumPoolCreated(bytes32 poolAddr, address launchedToken); 
@@ -48,20 +49,21 @@ contract RasieFunding is Ownable {
         raydiumPool = new CallRaydiumProgram(); 
     }
 
-    /// @notice Calculates how many tokens can be minted for a given amount of USDT
-    /// @param usdtAmount Amount of USDT sent
-    /// @return tokensToMint Number of tokens that will be minted
-function getAmount(uint256 usdtAmount) public view returns (uint256) {
-    uint256 p = basePrice + slope * launchToken.saleMinted();   // 1e18-scaled
-    return (usdtAmount * 1e18) / p;                             // divide, keep 18 dec
+function _currentPrice() internal view returns (uint256) {
+    // basePrice and slope are 1e18-scaled USDT
+    return basePrice + (slope * launchToken.saleMinted()) / 1e18;
 }
 
-    /// @notice Calculates how much USDT is required to buy a specific number of tokens
-    /// @param tokensToBuy Number of tokens user wants to buy
-    /// @return usdtRequired Amount of USDT required to buy the tokens
+function getAmount(uint256 usdtAmount) public view returns (uint256) {
+    uint256 p = _currentPrice();                 // USDT per token (1e18)
+    uint256 usdt18 = usdtAmount; 
+    return (usdt18 * 1e18) / p;                  // tokens in 1e18
+}
+
 function getUsdtToPay(uint256 tokensToBuy) public view returns (uint256) {
-    uint256 p = basePrice + slope * launchToken.saleMinted();   // 1e18-scaled
-    return (tokensToBuy * p) / 1e18;
+    uint256 p = _currentPrice();
+    uint256 usdt18 = (tokensToBuy * p) / 1e18;
+    return usdt18; 
 }
 
     /// @notice Buy tokens from the bonding curve by sending USDT
@@ -85,6 +87,8 @@ function getUsdtToPay(uint256 tokensToBuy) public view returns (uint256) {
 
     /// @notice Lock sale and prepare liquidity at the terminal curve price
     function finalise() internal {
+        if (isFinalised) return; 
+        isFinalised = true;
         uint256 raydiumReserve = launchToken.balanceOf(address(this)); // 40 % of supply, sent intially by launchERC20 
         uint256 usdtReserve    = USDT.balanceOf(address(this));        // all USDT raised
 

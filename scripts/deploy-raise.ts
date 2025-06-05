@@ -13,7 +13,7 @@ import {
 const EXISTING_USDT = "";                           // put an address or leave ""
 const TOKEN_NAME = "Neon Launch Token";
 const TOKEN_SYMBOL = "NLT";
-const MAX_SUPPLY = ethers.parseUnits("1000000", 18);  // 1 000 000 NLT
+const MAX_SUPPLY = ethers.parseUnits("1000", 18);  // 1 000 000 NLT
 const BASE_PRICE = ethers.parseUnits("1", 18);        // 1 USDT
 const SLOPE = ethers.parseUnits("0.000001", 18); // tiny linear bump
 /* ──────────────────────────────────────────────────────────────────── */
